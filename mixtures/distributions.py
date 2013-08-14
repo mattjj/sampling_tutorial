@@ -118,10 +118,7 @@ class Gaussian(object):
         return {'x':self.mu[0],'y':self.mu[1],'rx':np.sqrt(s[0]),'ry':np.sqrt(s[1]),
                 'theta':theta}
 
-
-
-
-
+### we didn't get to the ones below here
 
 class ScalarGaussianFixedVar(object):
     def __init__(self,mu_0=None,tausq_0=None,sigmasq=None,mu=None):
