@@ -7,16 +7,17 @@ from matplotlib import pyplot as plt
 import util
 
 class Categorical(object):
-    def __init__(self,weights=None,alpha=None):
-        self.weights = weights
+    def __init__(self,alpha=None,pi=None):
         self.alpha = alpha
+        self.pi = pi
 
-    def log_likelihood(self,x):
-        return np.log(self.weights)[x]
+    def log_likelihood(self,z):
+        return np.log(self.pi)[z]
 
     def resample(self,data=[]):
-        posterior_alpha = self._posterior_hypparams(*self._get_statistics(data))
-        self.weights = np.random.dirichlet(posterior_alpha)
+        alpha_n = self._posterior_hypparams(
+                    self._get_statistics(data))
+        self.pi = np.random.dirichlet(alpha_n)
 
     def _get_statistics(self,data):
         K = len(self.alpha)
@@ -24,15 +25,15 @@ class Categorical(object):
             counts = np.bincount(data,minlength=K)
         else:
             counts = sum(np.bincount(d,minlength=K) for d in data)
-
-        return counts,
+        return counts
 
     def _posterior_hypparams(self,counts):
         return self.alpha + counts
 
 
 class Gaussian(object):
-    def __init__(self,mu=None,Sigma=None,mu_0=None,Sigma_0=None,kappa_0=None,nu_0=None):
+    def __init__(self,mu=None,Sigma=None,
+            mu_0=None,Sigma_0=None,kappa_0=None,nu_0=None):
         self.mu = mu
         self.Sigma = Sigma
         self.mu_0 = mu_0
@@ -51,7 +52,8 @@ class Gaussian(object):
 
     def resample(self,data=[]):
         self.mu, self.Sigma = util.sample_niw(
-                *self._posterior_hypparams(*self._get_statistics(data)))
+                *self._posterior_hypparams(
+                    *self._get_statistics(data)))
 
     def _get_statistics(self,data):
         D = len(self.mu) if isinstance(self.mu,np.ndarray) else 1
@@ -121,75 +123,4 @@ class Gaussian(object):
 
 
 
-
-
-class ScalarGaussianFixedVar(object):
-    def __init__(self,mu_0=None,tausq_0=None,sigmasq=None,mu=None):
-        self.mu_0 = mu_0
-        self.tausq_0 = tausq_0
-        self.sigmasq = sigmasq
-        self.mu = mu
-
-    def log_likelihood(self,x):
-        x = np.reshape(x,(-1,1))
-        return (-0.5*(x-self.mu)**2/self.sigmasq - np.log(np.sqrt(2*np.pi*self.sigmasq))).ravel()
-
-    def resample(self,data=[]):
-        mu_n, tausq_n = self._posterior_hypparams(*self._get_statistics(data))
-        self.mu = np.sqrt(tausq_n)*np.random.randn()+mu_n
-
-    def _posterior_hypparams(self,n,xbar):
-        mu_0, tausq_0 = self.mu_0, self.tausq_0
-        sigmasq = self.sigmasq
-        if n > 0:
-            tausq_n = 1/(1/tausq_0 + n/sigmasq)
-            mu_n = (mu_0/tausq_0 + n*xbar/sigmasq)*tausq_n
-
-            return mu_n, tausq_n
-        else:
-            return mu_0, tausq_0
-
-    def _get_statistics(self,data):
-        n = util.getdatasize(data)
-        if n > 0:
-            if isinstance(data,np.ndarray):
-                xbar = data.mean()
-            else:
-                xbar = sum(d.sum() for d in data)/n
-        else:
-            xbar = None
-        return n, xbar
-
-
-class ScalarGaussianFixedVarRestrictedMean(ScalarGaussianFixedVar):
-    def resample(self,data=[],num_mh_iter=1000,proposal_width=0.1):
-        if len(data) == 0:
-            self.mu = np.random.uniform(low=0,high=10)
-        else:
-            # make sure we're initialized somewhere
-            if self.mu is None:
-                self.mu = np.random.uniform(low=0,high=10)
-
-            for t in xrange(num_mh_iter):
-                current_mu = self.mu
-                current_log_score = np.sum(self.log_likelihood(data))
-
-                low = max(0,current_mu - proposal_width/2)
-                high = min(10,current_mu + proposal_width/2)
-                proposal_mu = np.random.uniform(low=low,high=high)
-                self.mu = proposal_mu
-                proposal_log_score = np.sum(self.log_likelihood(data))
-                forward_proposal_logprob = -np.log(high-low)
-
-                low = max(0, proposal_mu - proposal_width/2)
-                high = min(10,proposal_mu + proposal_width/2)
-                reverse_proposal_logprob = -np.log(high-low)
-
-                accept_prob = max(1, np.exp(proposal_log_score + reverse_proposal_logprob
-                                        - (current_log_score + forward_proposal_logprob)))
-
-                if np.random.rand() < accept_prob:
-                    self.mu = proposal_mu
-                else:
-                    self.mu = current_mu
 

@@ -20,7 +20,8 @@ class Mixture(object):
         self.weights.resample(data=[l.z for l in self.labels_list])
 
         for label_idx, distn in enumerate(self.components):
-            distn.resample(data=[l.data[l.z == label_idx] for l in self.labels_list])
+            distn.resample(data=[l.data[l.z == label_idx]
+                for l in self.labels_list])
 
     ### plotting
 
@@ -87,6 +88,7 @@ class Labels(object):
 
         for idx, distn in enumerate(model.components):
             log_scores[:,idx] = distn.log_likelihood(data)
+
         log_scores += model.weights.log_likelihood(np.arange(K))
 
         self.z = util.sample_discrete_from_log(log_scores,axis=1)
