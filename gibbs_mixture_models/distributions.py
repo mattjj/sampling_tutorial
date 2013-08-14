@@ -119,5 +119,4 @@ class Gaussian(object):
                 'theta':theta}
 
 
-# TODO diagonal gaussian, diagonal gaussian with truncated obs
 
