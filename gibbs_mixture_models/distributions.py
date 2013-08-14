@@ -119,6 +119,10 @@ class Gaussian(object):
                 'theta':theta}
 
 
+
+
+
+
 class ScalarGaussianFixedVar(object):
     def __init__(self,mu_0=None,tausq_0=None,sigmasq=None,mu=None):
         self.mu_0 = mu_0
@@ -155,6 +159,7 @@ class ScalarGaussianFixedVar(object):
         else:
             xbar = None
         return n, xbar
+
 
 class ScalarGaussianFixedVarRestrictedMean(ScalarGaussianFixedVar):
     def resample(self,data=[],num_mh_iter=1000,proposal_width=0.1):
