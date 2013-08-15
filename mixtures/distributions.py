@@ -182,7 +182,7 @@ class ScalarGaussianFixedVarRestrictedMean(ScalarGaussianFixedVar):
                 high = min(10,proposal_mu + proposal_width/2)
                 reverse_proposal_logprob = -np.log(high-low)
 
-                accept_prob = max(1, np.exp(proposal_log_score + reverse_proposal_logprob
+                accept_prob = min(1, np.exp(proposal_log_score + reverse_proposal_logprob
                                         - (current_log_score + forward_proposal_logprob)))
 
                 if np.random.rand() < accept_prob:
